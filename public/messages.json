@@ -1,0 +1,23 @@
+[
+    {
+      "title": "비모보 30mg/ 30t 품절안내",
+      "sender": "A도매상",
+      "note": null
+    },
+    {
+      "title": "신규 약품 추가안내",
+      "sender": "billing@acme.corp",
+      "note": "Expiry on 20/2024"
+    },
+    {
+      "title": "다음 주 배송 일정 변경 안내",
+      "sender": "B도매상",
+      "note": "2025년 5월 10일 → 2025년 5월 13일"
+    },
+    {
+      "title": "냉장 보관 의약품 주의사항",
+      "sender": "관리팀",
+      "note": "24시간 이내 입고 필수"
+    }
+  ]
+  
