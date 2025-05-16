@@ -6,47 +6,77 @@ const xlsx = require('xlsx');
 const mongoose = require('mongoose');
 
 const Medicine = require('./models/Medicine');
-const uploadRouter = require('./routes/upload');
+const invoiceRouter = require('./routes/invoiceRouter'); // ✅ PDF 처리 라우터
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
 app.use(cors());
 app.use(express.json());
-app.use('/api/upload', uploadRouter); // 파일 업로드 라우터 연결
+app.use('/api', invoiceRouter); // ✅ 라우터 등록
+app.use('/exports', express.static('exports')); // ✅ 생성된 PDF 접근 경로
 
 // MongoDB 연결
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/medicine-db';
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// 엑셀 업로드 및 저장
-app.post('/upload', upload.single('file'), async (req, res) => {
-  const workbook = xlsx.readFile(req.file.path);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const jsonData = xlsx.utils.sheet_to_json(sheet);
+// 엑셀 업로드 (기존 로직)
+function mapRow(row) {
+  const toNum = v => (typeof v === 'string' ? parseFloat(v.replace(/,/g, '')) : v || 0);
+  return {
+    no: row['No'],
+    supplier: row['입고처'],
+    manufacturer: row['제조사'],
+    code: row['코드'],
+    name: row['제품명'],
+    spec: row['규격'],
+    basePrice: toNum(row['기준가']),
+    location: row['재고위치'],
+    prevStock: toNum(row['전일재고']),
+    prevAmount: toNum(row['전일금액']),
+    inQty: toNum(row['입고수량']),
+    inAmount: toNum(row['입고금액']),
+    outQty: toNum(row['출고수량']),
+    outAmount: toNum(row['출고금액']),
+    stockQty: toNum(row['재고수량']),
+    purchasedQty: toNum(row['매입처집계수량']),
+    unitPrice: toNum(row['단가']),
+    basePricePercent: toNum(row['기준가%']),
+    stockAmount: toNum(row['재고금액']),
+    basePriceCode: row['기준가코드'],
+    remarks: row['비고'],
+    standardCode: row['표준코드'],
+    productLocation: row['제품위치'],
+  };
+}
 
+app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    await Medicine.insertMany(jsonData);
-    res.status(200).json({ message: '엑셀 업로드 및 저장 성공' });
-  } catch (error) {
-    res.status(500).json({ error: 'DB 저장 실패', detail: error.message });
+    const wb = xlsx.readFile(req.file.path);
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const raw = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+    const medicines = raw.map(mapRow);
+    await Medicine.insertMany(medicines);
+    return res.json({ message: '✅ 업로드 및 저장 성공', count: medicines.length });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: '파일 처리 실패', detail: err.message });
   }
 });
 
-// 약 이름으로 검색
 app.get('/api/medicines', async (req, res) => {
-  const { name } = req.query;
-  const results = await Medicine.find({ name: new RegExp(name, 'i') });
-  res.json(results);
+  try {
+    const { name } = req.query;
+    const filter = name ? { name: new RegExp(name, 'i') } : {};
+    const docs = await Medicine.find(filter).lean();
+    return res.json(docs);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: '조회 실패', detail: err.message });
+  }
 });
 
-// 서버 실행
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`서버가 포트 ${PORT}에서 실행 중`);
-});
+app.listen(PORT, () => console.log(`🚀 서버 실행 중: http://localhost:${PORT}`));

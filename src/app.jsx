@@ -10,6 +10,7 @@ import Order             from './pages/Order';
 import VendorDashboard   from './pages/VendorDashboard';
 import VendorStocks      from './pages/VendorStocks';
 import VendorOrdersManagement from './pages/VendorOrdersManagement';
+import VendorInvoice from './pages/VendorInvoice';
 
 const App = () => (
   <Routes>
@@ -29,6 +30,7 @@ const App = () => (
       <Route path="/vendor/dashboard"   element={<VendorDashboard />} />
       <Route path="/vendor/stocks"      element={<VendorStocks />} />
       <Route path="/vendor/orders"      element={<VendorOrdersManagement />} />
+      <Route path="/vendor/invoice" element={<VendorInvoice />} />
     </Route>
 
     {/* 매칭되지 않는 경로는 대시보드로 */}

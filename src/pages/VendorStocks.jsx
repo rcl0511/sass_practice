@@ -3,46 +3,44 @@ import React, { useEffect, useState } from 'react';
 
 const VendorStocks = () => {
   const [medicines, setMedicines] = useState([]);
-const [file, setFile] = useState(null);
+  const [file, setFile] = useState(null);
 
-  // 2) fetchMedicines 함수
-const fetchMedicines = async () => {
-  try {
-    const res = await fetch('http://localhost:5000/api/medicines');
-    if (!res.ok) throw new Error('데이터 조회 실패');
-    const data = await res.json();
-    setMedicines(data);
-  } catch (e) {
-    console.error(e);
-    alert(e.message);
-  }
-};
-  
-  // 3) 컴포넌트 마운트 시 한 번 호출
-useEffect(() => {
-  fetchMedicines();
-}, []);
+  // 의약품 리스트 조회 함수
+  const fetchMedicines = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/medicines');
+      if (!res.ok) throw new Error('데이터 조회 실패');
+      const data = await res.json();
+      setMedicines(data);
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    }
+  };
 
-  // 파일 선택
-  const onFileChange = e => {
+  // 컴포넌트 마운트 시 조회
+  useEffect(() => {
+    fetchMedicines();
+  }, []);
+
+  // 파일 선택 핸들러
+  const onFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  
+  // 업로드 핸들러
   const onUpload = async () => {
     if (!file) return alert('엑셀 파일을 선택하세요.');
-  
-    // FormData 변수명과 fetch 결과 변수를 정확히 써줍니다.
+
     const formData = new FormData();
     formData.append('file', file);
-  
+
     try {
-      // fetch 결과를 res에 담고, formData 변수를 사용
-      const res = await fetch('http://localhost:5000/api/medicines/upload', {
+      const res = await fetch('http://localhost:5000/api/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
-  
+
       if (!res.ok) throw new Error('업로드 실패');
       alert('업로드 성공!');
       fetchMedicines();
@@ -74,7 +72,7 @@ useEffect(() => {
               <td>{m.name}</td>
               <td>{m.code}</td>
               <td>{m.manufacturer}</td>
-              <td>{m.basePrice.toLocaleString()}</td>
+              <td>{m.basePrice?.toLocaleString()}</td>
               <td>{m.stockQty}</td>
               <td>{m.standardCode}</td>
             </tr>
