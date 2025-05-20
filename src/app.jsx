@@ -1,16 +1,18 @@
+// src/App.jsx
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 
-import Login             from './pages/Login';
-import Signup            from './pages/Signup';
-import MainLayout        from './layout/MainLayout';
-import HospitalDashboard from './pages/HospitalDashboard';
-import Order             from './pages/Order';
-import VendorDashboard   from './pages/VendorDashboard';
-import VendorStocks      from './pages/VendorStocks';
-import VendorOrdersManagement from './pages/VendorOrdersManagement';
-import VendorInvoice from './pages/VendorInvoice';
+import Login                        from './pages/Login';
+import Signup                       from './pages/Signup';
+import MainLayout                   from './layout/MainLayout';
+import HospitalDashboard            from './pages/HospitalDashboard';
+import Order                        from './pages/Order';
+import VendorDashboard              from './pages/VendorDashboard';
+import VendorStocks                 from './pages/VendorStocks';
+import VendorOrdersManagement       from './pages/VendorOrdersManagement';
+import VendorInvoice                from './pages/VendorInvoice';
+import VendorLedger                 from './pages/VendorLedger';
 
 const App = () => (
   <Routes>
@@ -24,13 +26,15 @@ const App = () => (
     {/* MainLayout 하위 라우트 */}
     <Route element={<MainLayout />}>
       <Route path="/hospital/dashboard" element={<HospitalDashboard />} />
-      {/* 주문(Invoice) 페이지 */}
       <Route path="/hospital/order"     element={<Order />} />
+
       {/* 공급업체 페이지 */}
-      <Route path="/vendor/dashboard"   element={<VendorDashboard />} />
-      <Route path="/vendor/stocks"      element={<VendorStocks />} />
-      <Route path="/vendor/orders"      element={<VendorOrdersManagement />} />
-      <Route path="/vendor/invoice" element={<VendorInvoice />} />
+      <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+      <Route path="/vendor/stocks"    element={<VendorStocks />} />
+      <Route path="/vendor/orders"    element={<VendorOrdersManagement />} />
+      <Route path="/vendor/invoice"   element={<VendorInvoice />} />
+      {/* 추가: 거래장 조회 페이지 */}
+      <Route path="/vendor/trade"     element={<VendorLedger />} />
     </Route>
 
     {/* 매칭되지 않는 경로는 대시보드로 */}

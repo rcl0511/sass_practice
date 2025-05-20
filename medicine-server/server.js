@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -19,6 +20,15 @@ app.use('/api/medicines', medicineRoutes);
 // 주문 관련 라우터
 const ordersRouter = require('./routes/orders');
 app.use('/api/orders', ordersRouter);
+
+// invoiceRouter 등록 전에 static 미들웨어 추가
+app.use('/exports', express.static(path.join(__dirname, 'exports')));
+
+
+// ▶ invoiceRouter 등록 (이 부분을 추가)
+const invoiceRouter = require('./routes/invoiceRouter');
+app.use('/api', invoiceRouter);
+
 
 // 서버 시작
 const PORT = process.env.PORT || 5000;

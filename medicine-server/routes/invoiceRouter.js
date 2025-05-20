@@ -1,84 +1,96 @@
+// routes/invoiceRouter.js
 console.log('✅ invoiceRouter.js 로딩됨');
 
-const express = require('express');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-const PdfReader = require('pdfreader').PdfReader;
+const express       = require('express');
+const multer        = require('multer');
+const fs            = require('fs');
+const path          = require('path');
+const { PdfReader } = require('pdfreader');
+const Tabula        = require('tabula-js');
+const csvParse      = require('csv-parse/lib/sync');
 const { generateInvoiceHtml } = require('../templates/invoiceTemplate');
-const { htmlToPdf } = require('../utils/htmlToPdf');
+const { htmlToPdf }           = require('../utils/htmlToPdf');
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
 router.post('/upload-invoice', upload.single('invoice'), async (req, res) => {
-  const filePath = req.file.path;
-  const rows = {};
-
   try {
-    // 1. PDF 텍스트 파싱
+    const filePath = req.file.path;
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 1) Header OCR (PdfReader 로 상단 5줄만 추출해서 정규식으로 메타 뽑기)
+    // ─────────────────────────────────────────────────────────────────────────────
+    const headerRaw = [];
     await new Promise((resolve, reject) => {
       new PdfReader().parseFileItems(filePath, (err, item) => {
         if (err) return reject(err);
-        if (!item) return resolve(); // 끝
-        if (item.text) {
-          const y = Math.round(item.y * 10) / 10;
-          const row = rows[y] || [];
-          row.push(item.text);
-          rows[y] = row;
+        if (!item) return resolve();
+        // 상단 5줄만
+        if (item.text && headerRaw.length < 5) {
+          headerRaw.push(item.text);
         }
       });
     });
+    const headerText = headerRaw.join(' ');
+    // 정규식: 한글·영문 병원명, 주소, 날짜
+    const issuerMatch  = headerText.match(/([\p{L}\s]+?(?:병원|의원|의료원|Clinic|Hospital))/iu);
+    const addressMatch = headerText.match(/주소[:\s]*([\p{L}0-9,\-\s]+)/iu);
+    const dateMatch    = headerText.match(/(\d{4}\.\d{2}\.\d{2})/);
+    const metadata = {
+      issuer:  issuerMatch  ? issuerMatch[1].trim() : '병원명 없음',
+      address: addressMatch ? addressMatch[1].trim() : '',
+      date:    dateMatch    ? dateMatch[1]           : ''
+    };
 
-    // 2. 줄 조립
-    const lines = Object.keys(rows)
-      .sort((a, b) => parseFloat(a) - parseFloat(b))
-      .map(y => rows[y].join(' ').trim())
-      .filter(line => line && line !== '☆☆☆ 이하여백 ☆☆☆');
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 2) Tabula → CSV → 파싱 (격자 모드로 표 감지 정확도 높임)
+    // ─────────────────────────────────────────────────────────────────────────────
+    const tabulaCsv = await Tabula(filePath, {
+      pages:   'all',      // 전체 페이지
+      lattice: true,       // 셀 경계 모드
+      guess:   false       // 자동 추측 끄기
+    }).extractCsv();
 
-    // 3. 병원명 추출
-    const hospitalLine = lines.find(l => l.includes('병원') || l.includes('의원'));
-    const hospitalName = hospitalLine || '병원명 없음';
-
-    // 4. 제품 블록 추출 (8줄 단위)
-    const items = [];
-    for (let i = 0; i < lines.length - 7; i++) {
-      const block = lines.slice(i, i + 8);
-      const [unitPrice, standardCode, qty, expireDate, productCode, manufacturer, name, total] = block;
-
-      if (
-        /^\d{1,3}(,\d{3})*$/.test(unitPrice) &&
-        /^\d{6,}$/.test(standardCode) &&
-        /^\d+$/.test(qty) &&
-        /^\d{8}$/.test(expireDate) &&
-        /^[A-Z]{3}\d+/.test(productCode) &&
-        name.length > 2 &&
-        /^\d{1,3}(,\d{3})*$/.test(total)
-      ) {
-        items.push({ name, qty, unitPrice, total });
-        i += 7; // 다음 제품 블록으로 건너뛰기
-      }
+    // CSV → 2D 배열
+    const rows = csvParse(tabulaCsv, { trim: true });
+    if (rows.length < 2) {
+      // 표가 하나도 없으면 빈 배열 처리
+      throw new Error('표를 감지하지 못했습니다.');
     }
+    // 첫 줄 헤더, 나머지 제품 데이터
+    const items = rows.slice(1).map(cols => ({
+      name:         cols[0] || '',
+      spec:         cols[1] || '',
+      manufacturer: cols[2] || '',
+      qty:          cols[3] || '',
+      unit_price:   cols[4] || '',
+      total:        cols[5] || ''
+    }));
 
-    // 5. HTML → PDF 변환
-    const html = generateInvoiceHtml(hospitalName, items);
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 3) HTML → PDF 변환 & 저장
+    // ─────────────────────────────────────────────────────────────────────────────
+    const html     = generateInvoiceHtml(metadata, items);
     const filename = `${Date.now()}_invoice.pdf`;
     const exportsDir = path.join(__dirname, '../exports');
     if (!fs.existsSync(exportsDir)) fs.mkdirSync(exportsDir);
+
     const pdfPath = path.join(exportsDir, filename);
     await htmlToPdf(html, pdfPath);
 
-    // 6. 응답
-    res.json({
-      message: '성공',
-      hospitalName,
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 4) 응답
+    // ─────────────────────────────────────────────────────────────────────────────
+    return res.json({
+      message:  '성공',
+      metadata,
       items,
-      pdfUrl: `/exports/${filename}`
+      pdfUrl:   `/exports/${filename}`
     });
-
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'PDF 파싱 실패', detail: err.message });
+    console.error('🚨 invoiceRouter 오류:', err);
+    return res.status(500).json({ error: '처리 실패', detail: err.message });
   }
 });
 
