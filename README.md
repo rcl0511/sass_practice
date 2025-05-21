@@ -22,4 +22,66 @@ REST API를 통한 외부 시스템 연동 지원
 필요하신 경우, 위 시스템들에 대한 데모 환경 구성, 기능 비교표 작성, 커스터마이징 계획 수립 
 
 
-pdf파싱관련 오픈소스나 직접 개발해야할듯
+📦 프로젝트 루트
+├─ 📂 .vscode
+│  └─ 📄 launch.json
+├─ 📂 medicine-server
+│  ├─ 📂 exports
+│  ├─ 📂 models
+│  │  ├─ 📄 Medicine.js
+│  │  ├─ 📄 Order.js
+│  │  └─ 📄 pdfUpload.js
+│  ├─ 📂 node_modules
+│  ├─ 📂 routes
+│  │  ├─ 📄 invoiceRouter.js
+│  │  ├─ 📄 medicines.js
+│  │  ├─ 📄 orders.js
+│  │  ├─ 📄 search.js
+│  │  └─ 📄 upload.js
+│  ├─ 📂 templates
+│  │  └─ 📄 invoiceTemplate.js
+│  ├─ 📂 uploads
+│  ├─ 📂 utils
+│  │  └─ 📄 htmlToPdf.js
+│  ├─ 📄 .env
+│  ├─ 📄 index.js
+│  ├─ 📄 package-lock.json
+│  ├─ 📄 package.json
+│  └─ 📄 server.js
+├─ 📂 node_modules
+├─ 📂 public
+│  ├─ 📄 messages.json
+│  └─ 📄 orders.json
+├─ 📂 src
+│  ├─ 📂 assets
+│  │  ├─ 📄 sidebar-left.svg
+│  │  └─ 📄 Vector.svg
+│  ├─ 📂 components
+│  ├─ 📂 contexts
+│  │  └─ 📄 AuthContext.jsx
+│  ├─ 📂 firebase
+│  ├─ 📂 layout
+│  │  └─ 📄 MainLayout.jsx
+│  ├─ 📂 pages
+│  │  ├─ 📄 HospitalDashboard.jsx
+│  │  ├─ 📄 Login.jsx
+│  │  ├─ 📄 Order.jsx
+│  │  ├─ 📄 Signup.jsx
+│  │  ├─ 📄 VendorDashboard.jsx
+│  │  ├─ 📄 VendorInvoice.jsx
+│  │  ├─ 📄 VendorLedger.jsx
+│  │  ├─ 📄 VendorOrdersManagement.jsx
+│  │  └─ 📄 VendorStocks.jsx
+│  ├─ 📂 router
+│  ├─ 📄 app.jsx
+│  ├─ 📄 config.js
+│  ├─ 📄 counter.ts
+│  ├─ 📄 index.css
+│  ├─ 📄 index.html
+│  ├─ 📄 main.jsx
+│  ├─ 📄 main.ts
+│  ├─ 📄 style.css
+│  ├─ 📄 typescript.svg
+│  └─ 📄 vite-env.d.ts
+├─ 📄 .gitignore
+├─ 📄 package-lock.json
