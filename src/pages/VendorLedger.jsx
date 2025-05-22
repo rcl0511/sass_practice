@@ -1,5 +1,5 @@
 // src/pages/VendorLedger.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import '../css/VendorLedger.css';
 
@@ -13,25 +13,19 @@ const VendorLedger = () => {
   const [ledger, setLedger] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 1) 마운트 시 Vendor가 거래하는 병원 리스트를 API로 불러옴
+  // 병원명/코드로 서버 검색
   useEffect(() => {
-    fetch('/api/vendors/hospitals')
+    if (!query.trim()) {
+      setHospitals([]);
+      return;
+    }
+    fetch(`/api/vendors/hospitals?q=${encodeURIComponent(query)}`)
       .then(res => res.json())
       .then(setHospitals)
       .catch(console.error);
-  }, []);
+  }, [query]);
 
-  // 2) 검색어에 따라 필터링 (useMemo로 최적화)
-  const filtered = useMemo(() => {
-    if (!query) return hospitals;
-    const lower = query.toLowerCase();
-    return hospitals.filter(h =>
-      h.name.toLowerCase().includes(lower) ||
-      (h.code && h.code.toLowerCase().includes(lower))
-    );
-  }, [hospitals, query]);
-
-  // 3) 조회 버튼 클릭
+  // 거래내역 조회
   const fetchLedger = () => {
     if (!selected) {
       alert('병원을 선택해 주세요');
@@ -39,7 +33,7 @@ const VendorLedger = () => {
     }
     setLoading(true);
     fetch(
-      `/api/vendors/ledger?hospitalId=${selected.id}` +
+      `/api/vendors/ledger?hospitalId=${selected._id || selected.id}` +
       `&from=${fromDate}&to=${toDate}`
     )
       .then(res => res.json())
@@ -48,7 +42,7 @@ const VendorLedger = () => {
       .finally(() => setLoading(false));
   };
 
-  // 4) 거래요청서 보내기
+  // 거래요청서 보내기
   const sendRequest = () => {
     if (!selected) {
       alert('병원을 선택해 주세요');
@@ -58,7 +52,7 @@ const VendorLedger = () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        hospitalId: selected.id,
+        hospitalId: selected._id || selected.id,
         from: fromDate,
         to: toDate
       })
@@ -91,23 +85,25 @@ const VendorLedger = () => {
             onFocus={() => setDropdownOpen(true)}
             onBlur={() => setTimeout(() => setDropdownOpen(false), 200)}
             className="dropdownInput"
+            autoComplete="off"
           />
           {dropdownOpen && (
             <ul className="dropdownList">
-              {filtered.slice(0, 100).map(h => (
-                <li
-                  key={h.id}
-                  onClick={() => {
-                    setSelected(h);
-                    setQuery(h.name);
-                    setDropdownOpen(false);
-                  }}
-                  className="dropdownItem"
-                >
-                  {h.name} ({h.code})
-                </li>
-              ))}
-              {filtered.length === 0 && (
+              {hospitals.length > 0 ? (
+                hospitals.slice(0, 100).map(h => (
+                  <li
+                    key={h._id || h.id}
+                    onClick={() => {
+                      setSelected(h);
+                      setQuery(h.nameOriginal); // nameOriginal로!
+                      setDropdownOpen(false);
+                    }}
+                    className="dropdownItem"
+                  >
+                    {h.nameOriginal} ({h.code})
+                  </li>
+                ))
+              ) : (
                 <li className="dropdownItem">검색 결과 없음</li>
               )}
             </ul>

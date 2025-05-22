@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../css/VendorClientManagement.css';
 
-// 1) 폼에 들어갈 모든 필드 정의
 const clientFields = [
   { name: 'classification', label: '거래처구분', type: 'text' },
   { name: 'code',           label: '코드',      type: 'text' },
@@ -49,7 +48,6 @@ const clientFields = [
   { name: 'prePayment',     label: '선결제유무', type: 'checkbox' },
 ];
 
-// 컴포넌트 시작
 export default function VendorClientManagement() {
   const [clients, setClients] = useState([]);
   const [newClient, setNewClient] = useState(
@@ -59,84 +57,106 @@ export default function VendorClientManagement() {
     }, {})
   );
   const [showForm, setShowForm] = useState(false);
-
-  // 엑셀 업로드를 위한 상태
   const [excelFile, setExcelFile] = useState(null);
+  const [editClient, setEditClient] = useState(null);
+  const [search, setSearch] = useState('');
 
-  // 1) 최초 로딩
-useEffect(() => {
-  if (clients.length > 0) {
-    console.log('실제 받은 clients[0]:', clients[0]);
-  }
-}, [clients]);
-
-  // 거래처 목록 조회
-const loadClients = async () => {
-  try {
-    const res = await axios.get('/api/vendors/clients');
-    console.log("✅ 클라이언트 목록 조회 데이터:", res.data);
-    setClients(Array.isArray(res.data) ? res.data : []);
-  } catch (err) {
-    console.error(err);
-    alert('엑셀 업로드 실패: ' + (err?.response?.data?.error || err.message));
-  }
-};
-
-
-
-  // 3) 엑셀 파일 선택 핸들러
-  const handleFileChange = e => {
-    setExcelFile(e.target.files[0]);
+  // 목록 조회
+  const loadClients = async () => {
+    try {
+      const res = await axios.get('/api/vendors/clients');
+      setClients(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      alert('조회 실패: ' + (err?.response?.data?.error || err.message));
+    }
   };
 
-  // 4) 엑셀 업로드 및 파싱 요청
+  useEffect(() => {
+    loadClients();
+  }, []);
+
+  // 엑셀 업로드
+  const handleFileChange = e => setExcelFile(e.target.files[0]);
   const handleUpload = async () => {
-  if (!excelFile) {
-    alert('파일을 선택해 주세요');
-    return;
-  }
-  const formData = new FormData();
-  formData.append('file', excelFile);
-  try {
-    await axios.post('/api/vendors/clients/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    alert('엑셀 업로드 성공');
-    loadClients(); // 성공 후 즉시 목록 조회!
-  } catch (err) {
-    console.error(err);
-    alert('엑셀 업로드 실패: ' + (err?.response?.data?.error || err.message));
-  }
-};
-    
+    if (!excelFile) {
+      alert('파일을 선택해 주세요');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', excelFile);
+    try {
+      await axios.post('/api/vendors/clients/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      alert('엑셀 업로드 성공');
+      setExcelFile(null);
+      loadClients();
+    } catch (err) {
+      alert('엑셀 업로드 실패: ' + (err?.response?.data?.error || err.message));
+    }
+  };
 
-
-  // 5) 폼 입력 핸들러
+  // 신규 거래처 입력
   const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setNewClient(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
-  // 6) 신규 거래처 저장
+  // 신규 거래처 저장
   const handleSubmit = async e => {
     e.preventDefault();
     try {
       await axios.post('/api/vendors/clients', newClient);
-      await loadClients();
       setShowForm(false);
-      // 폼 초기화
       setNewClient(
         clientFields.reduce((acc, f) => {
           acc[f.name] = f.type === 'checkbox' ? false : '';
           return acc;
         }, {})
       );
+      loadClients();
     } catch (err) {
-      console.error(err);
       alert('거래처 추가 실패');
+    }
+  };
+
+  // 수정 버튼
+  const handleEdit = (client) => {
+    setEditClient({ ...client });
+    setShowForm(false);
+  };
+
+  // 수정 폼 입력
+  const handleEditChange = e => {
+    const { name, value, type, checked } = e.target;
+    setEditClient(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  // 수정 저장
+  const handleEditSubmit = async e => {
+    e.preventDefault();
+    try {
+      await axios.patch(`/api/vendors/clients/${editClient._id}`, editClient);
+      setEditClient(null);
+      loadClients();
+    } catch (err) {
+      alert('수정 실패');
+    }
+  };
+
+  // 검색
+  const handleSearch = async () => {
+    try {
+      const res = await axios.get('/api/vendors/clients', { params: { q: search } });
+      setClients(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      alert('검색 실패: ' + (err?.response?.data?.error || err.message));
     }
   };
 
@@ -144,69 +164,80 @@ const loadClients = async () => {
     <div className="client-mgmt-container">
       <h2>거래처 관리</h2>
 
-      {/* 엑셀 업로드 UI */}
+      {/* 검색 */}
       <div style={{ marginBottom: 16 }}>
         <input
-          type="file"
-          accept=".xlsx, .xls"
-          onChange={handleFileChange}
+          type="text"
+          placeholder="코드/사업자명/사업자번호"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ marginRight: 8 }}
         />
-        <button className="btn primary" onClick={handleUpload}>
-          엑셀 업로드
-        </button>
+        <button className="btn" onClick={handleSearch}>검색</button>
       </div>
 
-      {/* 신규 거래처 추가 */}
-      <button
-        className="btn primary"
-        onClick={() => setShowForm(true)}
-      >
-        신규 거래처 추가
-      </button>
+      {/* 엑셀 업로드 */}
+<div className="top-actions">
+  <input
+    type="file"
+    accept=".xlsx, .xls"
+    onChange={handleFileChange}
+    style={{ marginRight: 8 }}
+  />
+  <button className="btn primary" onClick={handleUpload} style={{ marginRight: 16 }}>
+    엑셀 업로드
+  </button>
+  <button className="btn primary" onClick={() => setShowForm(true)}>
+    신규 거래처 추가
+  </button>
+</div>
 
       {/* 거래처 테이블 */}
-<table className="client-table">
-  <thead>
-    <tr>
-      <th>코드</th>
-      <th>사업자원어명</th>
-      <th>대표자</th>
-      <th>사업자번호</th>
-      <th>사업장주소</th>
-      <th>이메일</th>
-    </tr>
-  </thead>
-  <tbody>
-    {Array.isArray(clients) && clients.length > 0 ? (
-      clients.map((c, index) => (
-        <tr key={c.code || index}>
-          <td>{c.code}</td>
-          <td>{c.nameOriginal}</td>
-          <td>{c.representative}</td>
-          <td>{c.businessNumber}</td>
-          <td>{c.address}</td>
-          <td>{c.email}</td>
-        </tr>
-      ))
-    ) : (
-      <tr>
-        <td colSpan="6" style={{ textAlign: 'center' }}>
-          조회된 거래처가 없습니다.
-        </td>
-      </tr>
-    )}
-  </tbody>
-</table>
+      <table className="client-table">
+        <thead>
+          <tr>
+            <th>코드</th>
+            <th>사업자원어명</th>
+            <th>대표자</th>
+            <th>사업자번호</th>
+            <th>사업장주소</th>
+            <th>이메일</th>
+            <th>수정</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.isArray(clients) && clients.length > 0 ? (
+            clients.map((c, index) => (
+              <tr key={c._id || c.code || index}>
+                <td>{c.code}</td>
+                <td>{c.nameOriginal}</td>
+                <td>{c.representative}</td>
+                <td>{c.businessNumber}</td>
+                <td>{c.address}</td>
+                <td>{c.email}</td>
+                <td>
+                  <button className="btn" onClick={() => handleEdit(c)}>
+                    정보수정
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="7" style={{ textAlign: 'center' }}>
+                조회된 거래처가 없습니다.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
-      {/* 모달 폼 */}
+      {/* 신규 거래처 입력 모달 */}
       {showForm && (
         <div className="modal-backdrop">
           <div className="modal">
             <h3>신규 거래처 입력</h3>
-            <form
-              onSubmit={handleSubmit}
-              className="client-form"
-            >
+            <form onSubmit={handleSubmit} className="client-form">
               {clientFields.map(f => (
                 <div className="form-group" key={f.name}>
                   <label>
@@ -214,7 +245,7 @@ const loadClients = async () => {
                       <input
                         type="checkbox"
                         name={f.name}
-                        checked={newClient[f.name]}
+                        checked={!!newClient[f.name]}
                         onChange={handleChange}
                       />
                     )}
@@ -231,24 +262,60 @@ const loadClients = async () => {
                 </div>
               ))}
               <div style={{ marginTop: 16 }}>
-                <button
-                  type="submit"
-                  className="btn primary"
-                >
-                  저장
-                </button>
+                <button type="submit" className="btn primary">저장</button>
                 <button
                   type="button"
                   className="btn secondary"
                   onClick={() => setShowForm(false)}
-                >
-                  취소
-                </button>
+                >취소</button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* 거래처 정보 수정 모달 */}
+      {editClient && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <h3>거래처 정보 수정</h3>
+            <form onSubmit={handleEditSubmit} className="client-form">
+              {clientFields.map(f => (
+                <div className="form-group" key={f.name}>
+                  <label>
+                    {f.type === 'checkbox' && (
+                      <input
+                        type="checkbox"
+                        name={f.name}
+                        checked={!!editClient[f.name]}
+                        onChange={handleEditChange}
+                      />
+                    )}
+                    {f.label}
+                  </label>
+                  {f.type !== 'checkbox' && (
+                    <input
+                      type={f.type}
+                      name={f.name}
+                      value={editClient[f.name] || ''}
+                      onChange={handleEditChange}
+                    />
+                  )}
+                </div>
+              ))}
+              <div style={{ marginTop: 16 }}>
+                <button type="submit" className="btn primary">저장</button>
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={() => setEditClient(null)}
+                >취소</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
