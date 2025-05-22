@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "medicine-server/routes"]
+  "include": ["src", "medicine-server/routes", "vite.config.js"]
 }

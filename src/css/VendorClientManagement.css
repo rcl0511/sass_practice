@@ -1,0 +1,85 @@
+/* src/css/VendorClientManagement.css */
+
+.client-mgmt-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+}
+
+.client-mgmt-container h2 {
+  margin-bottom: 16px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.primary {
+  background: #475be8;
+  color: #fff;
+}
+
+.secondary {
+  background: #6b7280;
+  color: #fff;
+}
+
+.client-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.client-table th,
+.client-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: #fff;
+  padding: 20px;
+  border-radius: 4px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90%;
+  overflow-y: auto;
+}
+
+.client-form .form-group {
+  margin-bottom: 12px;
+}
+
+.client-form label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.client-form input[type="text"],
+.client-form input[type="date"],
+.client-form input[type="number"],
+.client-form select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.client-form input[type="checkbox"] {
+  margin-right: 6px;
+}

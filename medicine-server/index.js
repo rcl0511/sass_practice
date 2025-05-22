@@ -1,54 +1,58 @@
+// index.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const Medicine = require('./models/Medicine');
-const invoiceRouter = require('./routes/invoiceRouter'); // ✅ PDF 처리 라우터
+const invoiceRouter = require('./routes/invoiceRouter'); // PDF 처리 라우터
+const clientsRouter = require('./routes/Clients');       // 신규 Clients.js 라우터
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: path.join(__dirname, 'uploads/') });
 
 app.use(cors());
 app.use(express.json());
-app.use('/api', invoiceRouter); // ✅ 라우터 등록
-app.use('/exports', express.static('exports')); // ✅ 생성된 PDF 접근 경로
 
-// MongoDB 연결
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/medicine-db';
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+// 기존 라우터
+app.use('/api', invoiceRouter);
+app.use('/exports', express.static(path.join(__dirname, 'exports')));
 
-// 엑셀 업로드 (기존 로직)
+// **Clients 라우터 등록 (엑셀 업로드 & 조회)**
+// POST   /api/vendors/clients/upload
+// GET    /api/vendors/clients
+app.use('/api/vendors/clients', clientsRouter);
+
+// 기존 엑셀 → Medicine 저장 로직
 function mapRow(row) {
   const toNum = v => (typeof v === 'string' ? parseFloat(v.replace(/,/g, '')) : v || 0);
   return {
-    no: row['No'],
-    supplier: row['입고처'],
-    manufacturer: row['제조사'],
-    code: row['코드'],
-    name: row['제품명'],
-    spec: row['규격'],
-    basePrice: toNum(row['기준가']),
-    location: row['재고위치'],
-    prevStock: toNum(row['전일재고']),
-    prevAmount: toNum(row['전일금액']),
-    inQty: toNum(row['입고수량']),
-    inAmount: toNum(row['입고금액']),
-    outQty: toNum(row['출고수량']),
-    outAmount: toNum(row['출고금액']),
-    stockQty: toNum(row['재고수량']),
-    purchasedQty: toNum(row['매입처집계수량']),
-    unitPrice: toNum(row['단가']),
+    no:               row['No'],
+    supplier:         row['입고처'],
+    manufacturer:     row['제조사'],
+    code:             row['코드'],
+    name:             row['제품명'],
+    spec:             row['규격'],
+    basePrice:        toNum(row['기준가']),
+    location:         row['재고위치'],
+    prevStock:        toNum(row['전일재고']),
+    prevAmount:       toNum(row['전일금액']),
+    inQty:            toNum(row['입고수량']),
+    inAmount:         toNum(row['입고금액']),
+    outQty:           toNum(row['출고수량']),
+    outAmount:        toNum(row['출고금액']),
+    stockQty:         toNum(row['재고수량']),
+    purchasedQty:     toNum(row['매입처집계수량']),
+    unitPrice:        toNum(row['단가']),
     basePricePercent: toNum(row['기준가%']),
-    stockAmount: toNum(row['재고금액']),
-    basePriceCode: row['기준가코드'],
-    remarks: row['비고'],
-    standardCode: row['표준코드'],
-    productLocation: row['제품위치'],
+    stockAmount:      toNum(row['재고금액']),
+    basePriceCode:    row['기준가코드'],
+    remarks:          row['비고'],
+    standardCode:     row['표준코드'],
+    productLocation:  row['제품위치'],
   };
 }
 
@@ -78,8 +82,11 @@ app.get('/api/medicines', async (req, res) => {
   }
 });
 
+// MongoDB 연결
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/medicine-db';
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 서버 실행 중: http://localhost:${PORT}`));
-
-
-console.log('✅ index.js 실행됨');

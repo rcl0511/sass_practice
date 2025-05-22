@@ -13,6 +13,8 @@ import VendorStocks                 from './pages/VendorStocks';
 import VendorOrdersManagement       from './pages/VendorOrdersManagement';
 import VendorInvoice                from './pages/VendorInvoice';
 import VendorLedger                 from './pages/VendorLedger';
+import VendorClientManagement      from './pages/VendorClientManagement';
+
 
 const App = () => (
   <Routes>
@@ -33,6 +35,7 @@ const App = () => (
       <Route path="/vendor/stocks"    element={<VendorStocks />} />
       <Route path="/vendor/orders"    element={<VendorOrdersManagement />} />
       <Route path="/vendor/invoice"   element={<VendorInvoice />} />
+      <Route path="/vendor/clients"    element={<VendorClientManagement />} />
       {/* 추가: 거래장 조회 페이지 */}
       <Route path="/vendor/trade"     element={<VendorLedger />} />
     </Route>

@@ -52,7 +52,7 @@ const MainLayout = () => {
     navItem('재고관리', '/vendor/stocks'),
     navItem('명세서 발행', '/vendor/invoice'),
     navItem('거래장 조회', '/vendor/trade'),
-    navItem('권한설정', '/vendor/permissions'),
+    navItem('거래처 관리', '/vendor/clients'),
     navItem('공지사항', '/vendor/alarms')
   ];
 

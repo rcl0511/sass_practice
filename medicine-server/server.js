@@ -21,6 +21,11 @@ app.use('/exports', express.static(path.join(__dirname, 'exports')));
 const invoiceRouter = require('./routes/invoiceRouter');
 app.use('/api', invoiceRouter);
 
+
+// ✅ 아래 코드 추가
+const clientsRouter = require('./routes/Clients');
+app.use('/api/vendors/clients', clientsRouter);
+
 // 서버 시작
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
