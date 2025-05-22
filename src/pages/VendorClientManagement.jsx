@@ -165,34 +165,38 @@ const loadClients = async () => {
       </button>
 
       {/* 거래처 테이블 */}
-      <table className="client-table">
-        <thead>
-          <tr>
-            <th>코드</th>
-            <th>상호내부명</th>
-            <th>대표자</th>
-            <th>전화번호</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Array.isArray(clients) && clients.length > 0 ? (
-            clients.map((c, index) => (
-  <tr key={c.code || index}>
-    <td>{c.code}</td>
-    <td>{c.nameInternal}</td>
-    <td>{c.representative}</td>
-    <td>{c.phone}</td>
-  </tr>
-))
-          ) : (
-            <tr>
-              <td colSpan="4" style={{ textAlign: 'center' }}>
-                조회된 거래처가 없습니다.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+<table className="client-table">
+  <thead>
+    <tr>
+      <th>코드</th>
+      <th>사업자원어명</th>
+      <th>대표자</th>
+      <th>사업자번호</th>
+      <th>사업장주소</th>
+      <th>이메일</th>
+    </tr>
+  </thead>
+  <tbody>
+    {Array.isArray(clients) && clients.length > 0 ? (
+      clients.map((c, index) => (
+        <tr key={c.code || index}>
+          <td>{c.code}</td>
+          <td>{c.nameOriginal}</td>
+          <td>{c.representative}</td>
+          <td>{c.businessNumber}</td>
+          <td>{c.address}</td>
+          <td>{c.email}</td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="6" style={{ textAlign: 'center' }}>
+          조회된 거래처가 없습니다.
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
 
       {/* 모달 폼 */}
       {showForm && (
