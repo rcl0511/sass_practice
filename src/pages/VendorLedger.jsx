@@ -19,7 +19,8 @@ const VendorLedger = () => {
       setHospitals([]);
       return;
     }
-    fetch(`/api/vendors/hospitals?q=${encodeURIComponent(query)}`)
+    fetch(`/api/vendors/clients?q=${encodeURIComponent(query)}`)
+
       .then(res => res.json())
       .then(setHospitals)
       .catch(console.error);

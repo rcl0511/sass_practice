@@ -1,35 +1,41 @@
-// models/Medicine.js
+// routes/Medicines.js
 
-const mongoose = require('mongoose');
+const express = require('express');
+const router = express.Router();
+const multer = require('multer');
+const xlsx = require('xlsx');
+const path = require('path');
 
-// 1) 스키마 정의
-const MedicineSchema = new mongoose.Schema({
-  no:               Number,
-  supplier:         String,
-  manufacturer:     String,
-  code:             String,
-  name:             String,
-  spec:             String,
-  basePrice:        Number,
-  location:         String,
-  prevStock:        Number,
-  prevAmount:       Number,
-  inQty:            Number,
-  inAmount:         Number,
-  outQty:           Number,
-  outAmount:        Number,
-  stockQty:         Number,
-  purchasedQty:     Number,
-  unitPrice:        Number,
-  basePricePercent: Number,
-  stockAmount:      Number,
-  basePriceCode:    String,
-  remarks:          String,
-  standardCode:     String,
-  productLocation:  String
-}, {
-  timestamps: true
+const Medicine = require('../models/Medicine');  // ← 이거 맞게 가져와줘
+
+// 엑셀 업로드용 multer 설정
+const upload = multer({ dest: path.join(__dirname, '../uploads/') });
+
+// 1. 전체 의약품 목록 조회
+router.get('/', async (req, res) => {
+  try {
+    const medicines = await Medicine.find();
+    res.json(medicines);
+  } catch (err) {
+    res.status(500).json({ error: 'DB 조회 실패' });
+  }
 });
 
-// 2) 모델 생성 및 내보내기
-module.exports = mongoose.model('Medicine', MedicineSchema);
+// 2. 엑셀 업로드(파싱해서 DB에 저장)
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    const workbook = xlsx.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = xlsx.utils.sheet_to_json(sheet);
+
+    // 한 번에 모두 지우고 다시 저장 (원하면 바꿀 수 있음)
+    await Medicine.deleteMany({});
+    await Medicine.insertMany(rows);
+
+    res.json({ success: true, count: rows.length });
+  } catch (err) {
+    res.status(500).json({ error: '엑셀 파싱/저장 실패', detail: err.message });
+  }
+});
+
+module.exports = router;

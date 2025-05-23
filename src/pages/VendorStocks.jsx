@@ -18,12 +18,10 @@ const VendorStocks = () => {
     }
   };
 
-  // 컴포넌트 마운트 시 조회
   useEffect(() => {
     fetchMedicines();
   }, []);
 
-  // 파일 선택 핸들러
   const onFileChange = (e) => {
     setFile(e.target.files[0]);
   };
@@ -36,13 +34,15 @@ const VendorStocks = () => {
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:5000/api/upload', {
+      // 💡 **URL을 꼭 /api/medicines/upload로!**
+      const res = await fetch('http://localhost:5000/api/medicines/upload', {
         method: 'POST',
         body: formData,
       });
 
       if (!res.ok) throw new Error('업로드 실패');
       alert('업로드 성공!');
+      setFile(null);
       fetchMedicines();
     } catch (e) {
       console.error(e);
@@ -53,12 +53,10 @@ const VendorStocks = () => {
   return (
     <div style={{ padding: 24 }}>
       <h2>재고관리</h2>
-
       <div style={{ marginBottom: 16 }}>
         <input type="file" accept=".xlsx,.xls" onChange={onFileChange} />
         <button onClick={onUpload} style={{ marginLeft: 8 }}>업로드</button>
       </div>
-
       <table border="1" style={{ width: '100%', textAlign: 'center' }}>
         <thead>
           <tr>
